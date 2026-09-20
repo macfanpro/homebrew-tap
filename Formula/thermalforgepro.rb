@@ -1,7 +1,7 @@
 class Thermalforgepro < Formula
   desc "Apple Silicon fan control with an English and Chinese menu bar app"
   homepage "https://github.com/hongyukeji/ThermalForgePro"
-  url "https://github.com/hongyukeji/ThermalForgePro.git", tag: "v0.3.0", revision: "3907bc5523b1d04f880788a47f9390a1a8792920"
+  url "https://github.com/hongyukeji/ThermalForgePro.git", tag: "v0.3.1", revision: "d3c1da4e5df77098ece5273db093b4ac56f574d4"
   license "MIT"
 
   depends_on xcode: ["16.0", :build]
