@@ -1,0 +1,17 @@
+name: Formula
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tap
+        run: brew tap hongyukeji/tap "$GITHUB_WORKSPACE"
+      - name: Build
+        run: brew install --build-from-source hongyukeji/tap/thermalforgepro
+      - name: Test
+        run: brew test hongyukeji/tap/thermalforgepro
