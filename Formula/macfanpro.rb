@@ -1,9 +1,9 @@
 class Macfanpro < Formula
   desc "Apple Silicon fan control with an English and Chinese menu bar app"
   homepage "https://github.com/macfanpro/macfanpro"
-  url "https://github.com/macfanpro/macfanpro.git", tag: "v0.2.3.14", revision: "b3bdd62f6994b83238da5d7f2bc088bd8ae540bf"
+  url "https://github.com/macfanpro/macfanpro.git", tag: "v0.2.3.15", revision: "19dc8b2c561dc052a69b5e117230e605eb7496ca"
   license "MIT"
-  # Upstream-based 0.2.3.9 supersedes the former independent 0.3.x numbering.
+  # Keep package ordering stable for existing MacFanPro installations.
   version_scheme 1
 
   depends_on xcode: ["16.0", :build]
@@ -26,13 +26,6 @@ class Macfanpro < Formula
       Install or synchronize the root-owned daemon and menu bar app:
         sudo #{opt_bin}/macfanpro install
 
-      To replace an existing ThermalForgePro installation:
-        sudo #{opt_bin}/macfanpro install --migrate-thermalforgepro
-
-      To replace an existing ThermalForge installation:
-        sudo macfanpro install --migrate-thermalforge
-        brew uninstall thermalforge
-
       Open /Applications/MacFanPro.app and enable Launch at Login if wanted.
       After brew upgrade, run the synchronization command above again.
 
@@ -46,7 +39,6 @@ class Macfanpro < Formula
     assert_equal version.to_s, shell_output("#{bin}/macfanpro --version").strip
     assert_match "Fan control", shell_output("#{bin}/macfanpro --help")
     assert_match "--migrate-thermalforge", shell_output("#{bin}/macfanpro install --help")
-    assert_match "--migrate-thermalforgepro", shell_output("#{bin}/macfanpro install --help")
     app = prefix/"MacFanPro.app"
     bundle_id = shell_output("/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' #{app}/Contents/Info.plist").strip
     assert_equal "io.github.macfanpro.app", bundle_id
