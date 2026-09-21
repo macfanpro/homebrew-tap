@@ -2,13 +2,13 @@ class Macfanpro < Formula
   desc "Apple Silicon fan control with an English and Chinese menu bar app"
   homepage "https://github.com/macfanpro/macfanpro"
   url "https://github.com/macfanpro/macfanpro.git", tag: "v0.2.3.14", revision: "b3bdd62f6994b83238da5d7f2bc088bd8ae540bf"
+  license "MIT"
   # Upstream-based 0.2.3.9 supersedes the former independent 0.3.x numbering.
   version_scheme 1
-  license "MIT"
 
   depends_on xcode: ["16.0", :build]
-  depends_on macos: :sonoma
   depends_on arch: :arm64
+  depends_on macos: :sonoma
 
   def install
     system "swift", "build", "-c", "release", "--disable-sandbox", "--force-resolved-versions"
@@ -48,8 +48,8 @@ class Macfanpro < Formula
     assert_match "--migrate-thermalforge", shell_output("#{bin}/macfanpro install --help")
     assert_match "--migrate-thermalforgepro", shell_output("#{bin}/macfanpro install --help")
     app = prefix/"MacFanPro.app"
-    assert_equal "io.github.macfanpro.app",
-                 shell_output("/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' #{app}/Contents/Info.plist").strip
+    bundle_id = shell_output("/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' #{app}/Contents/Info.plist").strip
+    assert_equal "io.github.macfanpro.app", bundle_id
     assert_path_exists app/"Contents/Resources/LICENSE"
     assert_path_exists app/"Contents/Resources/MacFanPro_MacFanProLocalization.bundle"
     system "codesign", "--verify", "--deep", "--strict", app
