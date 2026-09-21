@@ -1,7 +1,9 @@
 class Thermalforgepro < Formula
   desc "Apple Silicon fan control with an English and Chinese menu bar app"
   homepage "https://github.com/hongyukeji/ThermalForgePro"
-  url "https://github.com/hongyukeji/ThermalForgePro.git", tag: "v0.3.3", revision: "50e7e4fd9025ae873752b9ad7ad71b3398cf58b7"
+  url "https://github.com/hongyukeji/ThermalForgePro.git", tag: "v0.2.3.9", revision: "d5fc6aec845dc5b5230fcdd6ab9c32430cd6fb1a"
+  # Upstream-based 0.2.3.9 supersedes the former independent 0.3.x numbering.
+  version_scheme 1
   license "MIT"
 
   depends_on xcode: ["16.0", :build]
@@ -22,14 +24,14 @@ class Thermalforgepro < Formula
   def caveats
     <<~EOS
       Install or synchronize the root-owned daemon and menu bar app:
-        sudo thermalforgepro install
+        sudo #{opt_bin}/thermalforgepro install
 
       To replace an existing ThermalForge installation:
         sudo thermalforgepro install --migrate-thermalforge
         brew uninstall thermalforge
 
       Open /Applications/ThermalForgePro.app and enable Launch at Login if wanted.
-      After brew upgrade, run sudo thermalforgepro install again.
+      After brew upgrade, run the synchronization command above again.
 
       Before brew uninstall, remove the privileged runtime:
         sudo thermalforgepro uninstall
