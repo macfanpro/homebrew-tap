@@ -10,8 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install tap
-        run: brew tap hongyukeji/tap "$GITHUB_WORKSPACE"
+        run: brew tap macfanpro/tap "$GITHUB_WORKSPACE"
       - name: Build
-        run: brew install --build-from-source hongyukeji/tap/thermalforgepro
+        run: brew install --build-from-source macfanpro/tap/macfanpro
       - name: Test
-        run: brew test hongyukeji/tap/thermalforgepro
+        run: brew test macfanpro/tap/macfanpro
