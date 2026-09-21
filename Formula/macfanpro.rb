@@ -27,7 +27,10 @@ class Macfanpro < Formula
         sudo #{opt_bin}/macfanpro install
 
       Open /Applications/MacFanPro.app and enable Launch at Login if wanted.
-      After brew upgrade, run the synchronization command above again.
+      After brew upgrade, stop the app before synchronizing the daemon:
+        #{opt_bin}/macfanpro auto --stop-app
+        sudo #{opt_bin}/macfanpro install
+        open /Applications/MacFanPro.app
 
       Before brew uninstall, remove the privileged runtime:
         sudo macfanpro uninstall
