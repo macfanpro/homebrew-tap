@@ -1,7 +1,7 @@
 class Macfanpro < Formula
   desc "Apple Silicon fan control with an English and Chinese menu bar app"
   homepage "https://github.com/macfanpro/macfanpro"
-  url "https://github.com/macfanpro/macfanpro.git", tag: "v0.2.3.21", revision: "e6976b561954247a4405495ad3621656cc5a5e22"
+  url "https://github.com/macfanpro/macfanpro.git", tag: "v0.2.3.22", revision: "cad2a1bf31429435fd464e4f2c79c6eec629804b"
   license "MIT"
   # Keep package ordering stable for existing MacFanPro installations.
   version_scheme 1
