@@ -6,6 +6,13 @@ class Macfanpro < Formula
   # Keep package ordering stable for existing MacFanPro installations.
   version_scheme 1
 
+  # Prebuilt for Apple Silicon; the binaries target macOS 14, so the sonoma bottle
+  # serves every later macOS. Without it Homebrew builds from source with Xcode.
+  bottle do
+    root_url "https://github.com/macfanpro/homebrew-tap/releases/download/macfanpro-0.2.3.30"
+    sha256 arm64_sonoma: "9f996425fdfc19cca5d946ee41720c1bf13599923c49155f5b9536702fff7669"
+  end
+
 
   depends_on xcode: ["16.0", :build]
   depends_on arch: :arm64
