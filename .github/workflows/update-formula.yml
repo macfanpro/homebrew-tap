@@ -1,0 +1,153 @@
+name: Update formula
+
+# Follows MacFanPro's latest published release: points the formula at its tag,
+# builds and uploads a bottle, checks that Homebrew pours it, then commits.
+# Drafts are ignored, so a release is picked up only after it is published.
+# Runs hourly; to update right away: gh workflow run update-formula.yml -R macfanpro/homebrew-tap
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild the bottle even if the formula is already current
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-formula
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: macos-15
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find the latest release
+        id: latest
+        run: |
+          tag=$(gh release view -R macfanpro/macfanpro --json tagName --jq .tagName)
+          version=${tag#v}
+          revision=$(gh api "repos/macfanpro/macfanpro/commits/$tag" --jq .sha)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          if grep -q "tag: \"$tag\"" Formula/macfanpro.rb \
+             && grep -q "download/macfanpro-$version\"" Formula/macfanpro.rb \
+             && [ "${{ inputs.force }}" != "true" ]; then
+            echo "Formula is already at $tag with its bottle."
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Point the formula at the release
+        if: steps.latest.outputs.current != 'true'
+        env:
+          TAG: ${{ steps.latest.outputs.tag }}
+          REVISION: ${{ steps.latest.outputs.revision }}
+        run: |
+          python3 - <<'EOF'
+          import os, re
+          p = "Formula/macfanpro.rb"
+          s = open(p).read()
+          s = re.sub(r'tag: "v[^"]+", revision: "[0-9a-f]+"',
+                     f'tag: "{os.environ["TAG"]}", revision: "{os.environ["REVISION"]}"', s)
+          # The old bottle belongs to the previous version.
+          s = re.sub(r"\n  # Prebuilt for Apple Silicon;.*?\n  end\n", "", s, flags=re.S)
+          open(p, "w").write(s)
+          EOF
+          git diff
+
+      - name: Build the bottle
+        if: steps.latest.outputs.current != 'true'
+        run: |
+          brew tap macfanpro/tap "$GITHUB_WORKSPACE"
+          # Tapping clones the committed state; use the edited formula.
+          cp Formula/macfanpro.rb "$(brew --repo macfanpro/tap)/Formula/macfanpro.rb"
+          brew trust macfanpro/tap 2>/dev/null || true
+          brew install --build-bottle macfanpro/tap/macfanpro
+          mkdir -p bottle && cd bottle
+          brew bottle --json --no-rebuild \
+            --root-url="https://github.com/macfanpro/homebrew-tap/releases/download/macfanpro-${{ steps.latest.outputs.version }}" \
+            macfanpro/tap/macfanpro
+
+      - name: Check and upload the bottle
+        if: steps.latest.outputs.current != 'true'
+        id: bottle
+        env:
+          VERSION: ${{ steps.latest.outputs.version }}
+        run: |
+          cd bottle
+          built=$(ls macfanpro--"$VERSION".*.bottle.tar.gz)
+          # The binaries target macOS 14, so one sonoma bottle serves every later
+          # macOS. Refuse to publish it if that ever stops being true.
+          mkdir x && tar -xzf "$built" -C x
+          for binary in x/macfanpro/"$VERSION"/bin/macfanpro x/macfanpro/"$VERSION"/MacFanPro.app/Contents/MacOS/MacFanProApp; do
+            vtool -show-build "$binary" | grep -q "minos 14.0" || { echo "$binary does not target macOS 14"; exit 1; }
+          done
+          # Homebrew downloads GitHub-hosted bottles as name-version.tag (one dash).
+          asset="macfanpro-$VERSION.arm64_sonoma.bottle.tar.gz"
+          cp "$built" "$asset"
+          echo "sha256=$(shasum -a 256 "$asset" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          if gh release view "macfanpro-$VERSION" >/dev/null 2>&1; then
+            gh release upload "macfanpro-$VERSION" "$asset" --clobber
+          else
+            gh release create "macfanpro-$VERSION" "$asset" --title "macfanpro $VERSION bottle" \
+              --notes "Prebuilt Homebrew bottle for MacFanPro $VERSION (Apple Silicon, macOS 14 or later), so \`brew install macfanpro\` needs no Xcode. Built from tag v$VERSION."
+          fi
+          url="https://github.com/macfanpro/homebrew-tap/releases/download/macfanpro-$VERSION/$asset"
+          for i in $(seq 60); do
+            [ "$(curl -sIL -o /dev/null -w '%{http_code}' "$url")" = 200 ] && exit 0
+            sleep 5
+          done
+          echo "Bottle is not downloadable: $url"; exit 1
+
+      - name: Add the bottle to the formula and check that it pours
+        if: steps.latest.outputs.current != 'true'
+        env:
+          VERSION: ${{ steps.latest.outputs.version }}
+          SHA256: ${{ steps.bottle.outputs.sha256 }}
+        run: |
+          python3 - <<'EOF'
+          import os
+          p = "Formula/macfanpro.rb"
+          s = open(p).read()
+          marker = "  version_scheme 1\n"
+          assert marker in s and "bottle do" not in s
+          v, sha = os.environ["VERSION"], os.environ["SHA256"]
+          block = (
+              "\n"
+              "  # Prebuilt for Apple Silicon; the binaries target macOS 14, so the sonoma bottle\n"
+              "  # serves every later macOS. Without it Homebrew builds from source with Xcode.\n"
+              "  bottle do\n"
+              f'    root_url "https://github.com/macfanpro/homebrew-tap/releases/download/macfanpro-{v}"\n'
+              f'    sha256 arm64_sonoma: "{sha}"\n'
+              "  end\n"
+          )
+          s = s.replace(marker, marker + block)
+          open(p, "w").write(s)
+          EOF
+          sed -n '1,20p' Formula/macfanpro.rb
+          cp Formula/macfanpro.rb "$(brew --repo macfanpro/tap)/Formula/macfanpro.rb"
+          brew uninstall macfanpro/tap/macfanpro
+          brew install macfanpro/tap/macfanpro 2>&1 | tee install.log
+          grep -q "Pouring macfanpro-$VERSION.arm64_sonoma.bottle.tar.gz" install.log
+          brew test macfanpro/tap/macfanpro
+          test "$("$(brew --prefix macfanpro)/bin/macfanpro" --version)" = "$VERSION"
+
+      - name: Commit
+        if: steps.latest.outputs.current != 'true'
+        env:
+          VERSION: ${{ steps.latest.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/macfanpro.rb
+          git diff --cached --quiet && { echo "No formula change."; exit 0; }
+          git commit -m "Release MacFanPro $VERSION with a prebuilt bottle"
+          git push
