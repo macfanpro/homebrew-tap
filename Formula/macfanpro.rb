@@ -1,7 +1,7 @@
 class Macfanpro < Formula
   desc "Apple Silicon fan control with a multilingual menu bar app"
   homepage "https://github.com/macfanpro/macfanpro"
-  url "https://github.com/macfanpro/macfanpro.git", tag: "v0.2.3.62", revision: "4ad0dc455b61f47873ad7f185053076e2a438f85"
+  url "https://github.com/macfanpro/macfanpro.git", tag: "v0.2.3.63", revision: "026969a14f447322d3bae790faec54d0ca67aa6f"
   license "MIT"
   # Keep package ordering stable for existing MacFanPro installations.
   version_scheme 1
@@ -9,8 +9,8 @@ class Macfanpro < Formula
   # Prebuilt for Apple Silicon; the binaries target macOS 14, so the sonoma bottle
   # serves every later macOS. Without it Homebrew builds from source with Xcode.
   bottle do
-    root_url "https://github.com/macfanpro/homebrew-tap/releases/download/macfanpro-0.2.3.62"
-    sha256 arm64_sonoma: "10799e8817df70c4662a40a7159d7062321a091b815d57a30720e0791f47db75"
+    root_url "https://github.com/macfanpro/homebrew-tap/releases/download/macfanpro-0.2.3.63"
+    sha256 arm64_sonoma: "5da923d5fa7eabca669aa1e73f8159e5125f54fc5bbc485c9d5b071997fb4274"
   end
 
 
